@@ -1,5 +1,5 @@
 typedef struct noeud {
-    char * mot;
+    char * val;
     struct noeud *fg, *fd;
 } Noeud, *Arbre;
 
