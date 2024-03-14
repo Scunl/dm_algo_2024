@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
         // Sauvegarde de l'arbre dans un fichier
         afficher_arbre(arbre, 0);
         FILE *fichier = ouvrir_fichier(argv[2]);
-        if (!serialise(fichier, arbre)) {
+        if (!serialise(fichier, arbre, 1)) {
             printf(
                 "Erreur lors de la sauvegarde de l'arbre dans le fichier.\n");
             liberer(&arbre);
@@ -36,8 +36,8 @@ int main(int argc, char *argv[]) {
         printf("L'arbre a été sauvegardé avec succès dans le fichier %s.\n",
                argv[2]);
 
-        // Libération de la mémoire allouée pour l'arbre
         liberer(&arbre);
+        fermer_fichier(fichier);
     }
     else if (strcmp(argv[1], "-G") == 0) {
         if (argc != 4) {
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
             liberer(&greffon);
             return 1;
         }
-        serialise(ouvrir_fichier(argv[1]), resultat);
+        serialise(ouvrir_fichier(argv[1]), resultat, 1);
         liberer(&arbre_source);
         liberer(&greffon);
         liberer(&resultat);

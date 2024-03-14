@@ -1,21 +1,26 @@
 #include "saage.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 
 FILE *ouvrir_fichier(char *nom_de_fichier) {
-    return fopen(nom_de_fichier, "a");
+    return fopen(nom_de_fichier, "w");
 }
 
-int serialise(FILE *fichier, Arbre A) {
-    if (fichier == NULL || A == NULL)
+int serialise(FILE *fichier, Arbre A, int niveau) {
+    if (fichier == NULL)
         return 0;
 
-    fprintf(fichier, "%s\n", A->val);
-    if (!serialise(fichier, A->fg))
-        return 0;
-    if (!serialise(fichier, A->fd))
-        return 0;
+    if (A == NULL) {
+        fprintf(fichier, "%*sValeur : NULL\n", niveau * 4, "");
+    } else {
+        fprintf(fichier, "%*sValeur : %s\n", niveau * 4, "", A->val);
+        printf("%*sValeur : %s\n", niveau * 4, "", A->val);
+        fprintf(fichier, "%*sGauche : \n", niveau * 4, "");
+        serialise(fichier, A->fg, niveau + 1);
+        fprintf(fichier, "%*sDroite : \n", niveau * 4, "");
+        serialise(fichier, A->fd, niveau + 1);
+    }
 
     return 1;
 }
@@ -25,8 +30,7 @@ void fermer_fichier(FILE *fichier) {
         fclose(fichier);
 }
 
-int deserialise(char *nom_de_fichier, Arbre *A) {
-    FILE *fichier = fopen(nom_de_fichier, "r");
+int deserialise(FILE *fichier, Arbre *A) {
     if (fichier == NULL)
         return 0;
 
@@ -42,25 +46,23 @@ int deserialise(char *nom_de_fichier, Arbre *A) {
         return 0;
     }
 
-    (*A)->val = (char *)malloc(
-        strlen(val) + 1); // Alloue de la mémoire pour la chaîne de caractères
+    (*A)->val = (char *)malloc(strlen(val) + 1);
     if ((*A)->val == NULL) {
         free(*A);
         fclose(fichier);
         return 0;
     }
 
-    strcpy((*A)->val,
-           val); // Copie la chaîne de caractères dans le champ val de l'arbre
+    strcpy((*A)->val, val);
 
-    if (!deserialise(nom_de_fichier, &((*A)->fg))) {
+    if (!deserialise(fichier, &((*A)->fg))) {
         free((*A)->val);
         free(*A);
         fclose(fichier);
         return 0;
     }
 
-    if (!deserialise(nom_de_fichier, &((*A)->fd))) {
+    if (!deserialise(fichier, &((*A)->fd))) {
         free((*A)->val);
         free((*A)->fg);
         free(*A);
@@ -71,7 +73,6 @@ int deserialise(char *nom_de_fichier, Arbre *A) {
     fclose(fichier);
     return 1;
 }
-
 
 Arbre charger_noeud(FILE *fichier) {
     char ligne[100];

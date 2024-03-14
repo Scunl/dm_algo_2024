@@ -139,39 +139,79 @@ void sauvegarder_noeud(FILE *fichier, Arbre A, int niveau) {
 
 Arbre charger_arbre_recursif(FILE *fichier) {
     char ligne[100];
+
+    // Lire la ligne pour la valeur du nœud
     if (fgets(ligne, sizeof(ligne), fichier) == NULL || ligne[0] == '\n') {
+        fprintf(stderr, "Erreur: Fin de fichier ou vide.\n");
         return NULL;
     }
 
     char val[100];
-    sscanf(ligne, "Valeur : %[^\n]", val);
-    if (strcmp(val, "NULL") == 0)
+    if (sscanf(ligne, "Valeur : %99[^\n]", val) != 1) {
+        fprintf(stderr, "Erreur: Lecture de la valeur du noeud.\n");
+        fprintf(stderr, "ligne : %s\n", ligne);
         return NULL;
+    }
+
+    printf("Valeur lue : %s\n", val);
 
     Arbre nouveau_noeud = alloue_noeud(val);
     if (nouveau_noeud == NULL) {
-        fprintf(stderr, "Erreur lors de l'allocation de mémoire.\n");
+        fprintf(stderr, "Erreur: Allocation de mémoire pour le nœud.\n");
         return NULL;
     }
 
-    // Charger le sous-arbre gauche
-    nouveau_noeud->fg = charger_arbre_recursif(fichier);
-    if (nouveau_noeud->fg == NULL && strcmp(val, "NULL") != 0) {
-        fprintf(stderr, "Erreur lors de la lecture du sous-arbre gauche.\n");
+    if (fgets(ligne, sizeof(ligne), fichier) == NULL || ligne[0] == '\n') {
+        fprintf(stderr, "Erreur: Fin de fichier prématurée ou ligne vide pour "
+                        "le sous-arbre gauche.\n");
         return NULL;
     }
+    if (strncmp(ligne, "Gauche", 6) != 0) {
+        fprintf(stderr,
+                "Erreur: Formatage incorrect pour le sous-arbre gauche.\n");
+        fprintf(stderr, "Contenu de la ligne : %s\n", ligne);
+        return NULL;
+    }
+
+    printf("Ligne lue pour le sous-arbre gauche : %s\n", ligne);
+    printf("Position actuelle dans le fichier après la lecture du sous-arbre "
+           "gauche : %ld\n",
+           ftell(fichier));
+
+    nouveau_noeud->fg = charger_arbre_recursif(fichier);
+    if (nouveau_noeud->fg == NULL && strcmp(val, "NULL") != 0) {
+        fprintf(stderr, "Erreur: Lecture du sous-arbre gauche.\n");
+        return NULL;
+    }
+
+    if (fgets(ligne, sizeof(ligne), fichier) == NULL || ligne[0] == '\n') {
+        fprintf(stderr, "Erreur: Fin de fichier prématurée ou ligne vide pour "
+                        "le sous-arbre droit.\n");
+        return NULL;
+    }
+    if (strncmp(ligne, "Droite", 6) != 0) {
+        fprintf(stderr,
+                "Erreur: Formatage incorrect pour le sous-arbre droit.\n");
+        fprintf(stderr, "Contenu de la ligne : %s\n", ligne);
+        return NULL;
+    }
+
+    printf("Ligne lue pour le sous-arbre droit : %s\n", ligne);
+    printf("Position actuelle dans le fichier après la lecture du sous-arbre "
+           "droit : %ld\n",
+           ftell(fichier));
 
     // Charger le sous-arbre droit
     nouveau_noeud->fd = charger_arbre_recursif(fichier);
     if (nouveau_noeud->fd == NULL && strcmp(val, "NULL") != 0) {
-        fprintf(stderr, "Erreur lors de la lecture du sous-arbre droit.\n");
+        fprintf(stderr, "Erreur: Lecture du sous-arbre droit.\n");
         return NULL;
     }
 
     return nouveau_noeud;
 }
 
-Arbre charger_arbre(const char *nom_fichier) {
+Arbre charger_arbre(char *nom_fichier) {
     FILE *fichier = fopen(nom_fichier, "r");
     if (fichier == NULL) {
         fprintf(stderr, "Impossible d'ouvrir le fichier %s.\n", nom_fichier);
@@ -200,7 +240,6 @@ Arbre creer_noeud(const char *val) {
     return n;
 }
 
-// Fonction récursive pour construire l'arbre à partir de la séquence de saisie
 Arbre construire_arbre(FILE *fichier) {
     char buffer[100];
     if (fscanf(fichier, "%s", buffer) != 1) {
@@ -221,33 +260,15 @@ Arbre construire_arbre(FILE *fichier) {
 
 void afficher_arbre(Arbre racine, int niveau) {
     if (racine == NULL) {
-        // Affichage de NULL avec le niveau approprié de tabulations
-        for (int i = 0; i < niveau; ++i) {
-            printf("\t");
-        }
         printf("NULL\n");
         return;
     }
 
-    // Affichage de la valeur du nœud avec le niveau approprié de tabulations
-    for (int i = 0; i < niveau; ++i) {
-        printf("\t");
-    }
     printf("Valeur : %s\n", racine->val);
 
-    // Affichage du sous-arbre gauche avec un niveau supplémentaire de
-    // tabulations
-    for (int i = 0; i < niveau; ++i) {
-        printf("\t");
-    }
-    printf("- Gauche :\n");
+    printf("  Gauche :\n");
     afficher_arbre(racine->fg, niveau + 1);
 
-    // Affichage du sous-arbre droit avec un niveau supplémentaire de
-    // tabulations
-    for (int i = 0; i < niveau; ++i) {
-        printf("\t");
-    }
-    printf("- Droite :\n");
+    printf("  Droite :\n");
     afficher_arbre(racine->fd, niveau + 1);
 }

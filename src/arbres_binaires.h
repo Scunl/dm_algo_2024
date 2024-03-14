@@ -16,7 +16,7 @@ Arbre cree_A_3(void);
 int construit_arbre(Arbre *a);
 
 Arbre creer_arbre_saisie_utilisateur(void);
-Arbre charger_arbre(const char *nom_fichier);
+Arbre charger_arbre(char *nom_fichier);
 Arbre construire_arbre(FILE *fichier);
 Arbre creer_noeud(const char *val);
 void afficher_arbre(Arbre racine, int niveau);
