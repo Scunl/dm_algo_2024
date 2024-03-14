@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define ERROR printf("\n%d : %s\n", __LINE__, __FILE__)
+
+
 Arbre alloue_noeud(char *val) {
     Arbre new = (Arbre)malloc(sizeof(Noeud));
     if (!new) {
@@ -27,6 +30,7 @@ Arbre alloue_noeud(char *val) {
 
 void liberer(Arbre *A) {
     if (*A != NULL) {
+        ERROR;
         liberer(&((*A)->fg));
         liberer(&((*A)->fd));
         free((*A)->val);
@@ -139,74 +143,45 @@ void sauvegarder_noeud(FILE *fichier, Arbre A, int niveau) {
 
 Arbre charger_arbre_recursif(FILE *fichier) {
     char ligne[100];
-
-    // Lire la ligne pour la valeur du nœud
     if (fgets(ligne, sizeof(ligne), fichier) == NULL || ligne[0] == '\n') {
-        fprintf(stderr, "Erreur: Fin de fichier ou vide.\n");
         return NULL;
     }
-
     char val[100];
+    char gauche[100],
+        droite[100]; // Variables pour stocker les chaînes "Gauche" et "Droite"
     if (sscanf(ligne, "Valeur : %99[^\n]", val) != 1) {
-        fprintf(stderr, "Erreur: Lecture de la valeur du noeud.\n");
-        fprintf(stderr, "ligne : %s\n", ligne);
+        fprintf(stderr, "Erreur lors de la lecture de la valeur.\n");
         return NULL;
     }
 
-    printf("Valeur lue : %s\n", val);
+    if (strcmp(val, "NULL") == 0) {
+        return NULL;
+    }
 
     Arbre nouveau_noeud = alloue_noeud(val);
     if (nouveau_noeud == NULL) {
-        fprintf(stderr, "Erreur: Allocation de mémoire pour le nœud.\n");
+        fprintf(stderr, "Erreur lors de l'allocation de mémoire.\n");
         return NULL;
     }
 
-    if (fgets(ligne, sizeof(ligne), fichier) == NULL || ligne[0] == '\n') {
-        fprintf(stderr, "Erreur: Fin de fichier prématurée ou ligne vide pour "
-                        "le sous-arbre gauche.\n");
+    // Charger le sous-arbre gauche
+    if (fgets(ligne, sizeof(ligne), fichier) == NULL ||
+        sscanf(ligne, "Gauche : %99[^\n]", gauche) != 1) {
+        ERROR;
+
+
+        fprintf(stderr, "Erreur lors de la lecture du sous-arbre gauche.\n");
         return NULL;
     }
-    if (strncmp(ligne, "Gauche", 6) != 0) {
-        fprintf(stderr,
-                "Erreur: Formatage incorrect pour le sous-arbre gauche.\n");
-        fprintf(stderr, "Contenu de la ligne : %s\n", ligne);
-        return NULL;
-    }
-
-    printf("Ligne lue pour le sous-arbre gauche : %s\n", ligne);
-    printf("Position actuelle dans le fichier après la lecture du sous-arbre "
-           "gauche : %ld\n",
-           ftell(fichier));
-
     nouveau_noeud->fg = charger_arbre_recursif(fichier);
-    if (nouveau_noeud->fg == NULL && strcmp(val, "NULL") != 0) {
-        fprintf(stderr, "Erreur: Lecture du sous-arbre gauche.\n");
-        return NULL;
-    }
-
-    if (fgets(ligne, sizeof(ligne), fichier) == NULL || ligne[0] == '\n') {
-        fprintf(stderr, "Erreur: Fin de fichier prématurée ou ligne vide pour "
-                        "le sous-arbre droit.\n");
-        return NULL;
-    }
-    if (strncmp(ligne, "Droite", 6) != 0) {
-        fprintf(stderr,
-                "Erreur: Formatage incorrect pour le sous-arbre droit.\n");
-        fprintf(stderr, "Contenu de la ligne : %s\n", ligne);
-        return NULL;
-    }
-
-    printf("Ligne lue pour le sous-arbre droit : %s\n", ligne);
-    printf("Position actuelle dans le fichier après la lecture du sous-arbre "
-           "droit : %ld\n",
-           ftell(fichier));
 
     // Charger le sous-arbre droit
-    nouveau_noeud->fd = charger_arbre_recursif(fichier);
-    if (nouveau_noeud->fd == NULL && strcmp(val, "NULL") != 0) {
-        fprintf(stderr, "Erreur: Lecture du sous-arbre droit.\n");
+    if (fgets(ligne, sizeof(ligne), fichier) == NULL ||
+        sscanf(ligne, "Droite : %99[^\n]", droite) != 1) {
+        fprintf(stderr, "Erreur lors de la lecture du sous-arbre droit.\n");
         return NULL;
     }
+    nouveau_noeud->fd = charger_arbre_recursif(fichier);
 
     return nouveau_noeud;
 }
